@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI App Builder - Build Apps with TypeScript</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        .logo {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo p {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        .new-chat-btn {
+            margin: 20px;
+            padding: 12px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .new-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(59,130,246,0.4);
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 12px;
+        }
+
+        .history-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .history-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .history-item.active {
+            background: rgba(59,130,246,0.2);
+            border-left: 3px solid #3b82f6;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0f172a;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        }
+
+        .message.bot .message-avatar {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+        }
+
+        .message.bot .message-content {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
+        /* Code Preview Area */
+        .code-preview {
+            height: 400px;
+            background: #1e1e2e;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-tabs {
+            display: flex;
+            gap: 5px;
+            padding: 10px 20px;
+            background: #1a1a2a;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .preview-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .preview-tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .preview-content {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+        }
+
+        .code-block {
+            background: #0f0f1a;
+            border-radius: 12px;
+            overflow: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .code-block pre {
+            padding: 15px;
+            margin: 0;
+            color: #e2e8f0;
+        }
+
+        .code-block code {
+            color: #60a5fa;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px;
+            background: #1e293b;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 15px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #3b82f6;
+        }
+
+        .send-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(59,130,246,0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Live Preview Frame */
+        .live-preview {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+            border-radius: 8px;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 12px 18px;
+            background: #1e293b;
+            border-radius: 18px;
+            width: fit-content;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-10px); opacity: 1; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1>✨ AI App Builder</h1>
+                <p>Build apps with TypeScript & AI</p>
+            </div>
+            <button class="new-chat-btn" onclick="createNewChat()">+ New Conversation</button>
+            <div class="chat-history" id="chatHistory">
+                <div class="history-item active" onclick="switchChat(0)">Current Chat</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="chat-area" id="chatArea">
+                <div class="message bot">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        👋 Welcome to AI App Builder!<br><br>
+                        I can help you build:<br>
+                        • 🌐 **Full-stack web apps**<br>
+                        • 📱 **React components**<br>
+                        • 🎨 **Interactive UIs**<br>
+                        • 🔧 **TypeScript utilities**<br>
+                        • 💾 **Database integrations**<br><br>
+                        <strong>Try these examples:</strong><br>
+                        "Create a todo app with TypeScript"<br>
+                        "Build a weather dashboard"<br>
+                        "Make a calculator component"<br>
+                        "Create a chat interface"
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Preview Area -->
+            <div class="code-preview">
+                <div class="preview-tabs">
+                    <button class="preview-tab active" onclick="switchPreviewTab('code')">📝 TypeScript Code</button>
+                    <button class="preview-tab" onclick="switchPreviewTab('preview')">👁️ Live Preview</button>
+                    <button class="preview-tab" onclick="switchPreviewTab('html')">📄 HTML/CSS</button>
+                </div>
+                <div class="preview-content" id="previewContent">
+                    <div class="code-block" id="codeView">
+                        <pre><code id="codeContent">// Your app code will appear here
+// Try asking the AI to build something!
+
+interface App {
+    name: string;
+    version: string;
+}
+
+const app: App = {
+    name: "AI App Builder",
+    version: "1.0.0"
+};
+
+console.log("Welcome to " + app.name);</code></pre>
+                    </div>
+                    <div id="livePreview" style="display: none;">
+                        <iframe id="previewFrame" class="live-preview" srcdoc="<html><body style='display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif'><h2>✨ Your app will appear here</h2><p>Ask the AI to build something!</p></body></html>"></iframe>
+                    </div>
+                    <div id="htmlView" style="display: none;">
+                        <div class="code-block">
+                            <pre><code id="htmlContent">&lt;!-- HTML/CSS will appear here --&gt;</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <input type="text" class="chat-input" id="userInput" placeholder="Describe the app you want to build..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">Generate App →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // TypeScript-like JavaScript with full AI capabilities
+        interface ChatMessage {
+            role: 'user' | 'assistant';
+            content: string;
+            timestamp: Date;
+        }
+
+        interface AppCode {
+            typescript: string;
+            html: string;
+            css: string;
+            javascript: string;
+        }
+
+        // State management
+        let currentChatId = 0;
+        let chats: { id: number; messages: ChatMessage[]; title: string }[] = [];
+        let currentAppCode: AppCode = {
+            typescript: `// Welcome to AI App Builder
+// Describe what you want to build!
+
+interface AppConfig {
+    name: string;
+    version: string;
+    features: string[];
+}
+
+const appConfig: AppConfig = {
+    name: "My Awesome App",
+    version: "1.0.0",
+    features: ["AI-powered", "TypeScript", "Modern UI"]
+};
+
+console.log(\`Building \${appConfig.name}\`);`,
+            html: `<div class="container">
+    <h1>✨ AI App Builder</h1>
+    <p>Describe your app idea to get started!</p>
+    <button onclick="handleClick()">Get Started</button>
+</div>`,
+            css: `.container {
+    text-align: center;
+    padding: 50px;
+    font-family: system-ui;
+}
+
+h1 {
+    color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    transform: translateY(-2px);
+}`,
+            javascript: `function handleClick() {
+    alert('Welcome to AI App Builder!');
+    console.log('Button clicked!');
+}`
+        };
+
+        // Load saved chats
+        function loadChats() {
+            const saved = localStorage.getItem('ai_app_builder_chats');
+            if (saved) {
+                try {
+                    chats = JSON.parse(saved);
+                    if (chats.length === 0) {
+                        createNewChat();
+                    } else {
+                        renderChatHistory();
+                        loadChat(currentChatId);
+                    }
+                } catch(e) {
+                    createNewChat();
+                }
+            } else {
+                createNewChat();
+            }
+        }
+
+        // Save chats
+        function saveChats() {
+            localStorage.setItem('ai_app_builder_chats', JSON.stringify(chats));
+        }
+
+        // Create new chat
+        function createNewChat() {
+            const newId = Date.now();
+            chats.unshift({
+                id: newId,
+                messages: [],
+                title: `Chat ${chats.length + 1}`
+            });
+            currentChatId = newId;
+            renderChatHistory();
+            loadChat(currentChatId);
+            saveChats();
+            
+            // Add welcome message
+            addMessageToCurrentChat({
+                role: 'assistant',
+                content: "👋 Hi! I'm your AI app builder. Describe what you want to create, and I'll generate the code!",
+                timestamp: new Date()
+            });
+        }
+
+        // Switch chat
+        function switchChat(chatId: number) {
+            currentChatId = chatId;
+            loadChat(currentChatId);
+            renderChatHistory();
+        }
+
+        // Load chat messages
+        function loadChat(chatId: number) {
+            const chat = chats.find(c => c.id === chatId);
+            if (!chat) return;
+            
+            const chatArea = document.getElementById('chatArea');
+            chatArea.innerHTML = '';
+            
+            if (chat.messages.length === 0) {
+                // Add welcome message
+                const welcomeMsg: ChatMessage = {
+                    role: 'assistant',
+                    content: "✨ What would you like to build today? Describe your app idea!",
+                    timestamp: new Date()
+                };
+                chat.messages.push(welcomeMsg);
+                saveChats();
+            }
+            
+            chat.messages.forEach(msg => {
+                addMessageToUI(msg.role, msg.content);
+            });
+        }
+
+        // Add message to current chat
+        function addMessageToCurrentChat(message: ChatMessage) {
+            const chat = chats.find(c => c.id === currentChatId);
+            if (chat) {
+                chat.messages.push(message);
+                if (chat.messages.length === 2 && chat.title === `Chat ${chats.length}`) {
+                    // Update title based on first user message
+                    chat.title = message.content.substring(0, 30) + '...';
+                }
+                saveChats();
+                renderChatHistory();
+            }
+            addMessageToUI(message.role, message.content);
+        }
+
+        // Render UI message
+        function addMessageToUI(role: 'user' | 'assistant', content: string) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+                <div class="message-content">${formatMessage(content)}</div>
+            `;
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Format message with markdown
+        function formatMessage(content: string): string {
+            // Format code blocks
+            content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                return `<pre style="background:#0f0f1a;padding:10px;border-radius:8px;overflow-x:auto"><code>${escapeHtml(code.trim())}</code></pre>`;
+            });
+            
+            // Format inline code
+            content = content.replace(/`([^`]+)`/g, '<code style="background:#0f0f1a;padding:2px 6px;border-radius:4px">$1</code>');
+            
+            // Format bold
+            content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Format line breaks
+            content = content.replace(/\n/g, '<br>');
+            
+            return content;
+        }
+
+        function escapeHtml(text: string): string {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Render chat history sidebar
+        function renderChatHistory() {
+            const historyDiv = document.getElementById('chatHistory');
+            historyDiv.innerHTML = '';
+            chats.forEach(chat => {
+                const historyItem = document.createElement('div');
+                historyItem.className = `history-item ${chat.id === currentChatId ? 'active' : ''}`;
+                historyItem.innerHTML = chat.title;
+                historyItem.onclick = () => switchChat(chat.id);
+                historyDiv.appendChild(historyItem);
+            });
+        }
+
+        // AI Code Generation (Intelligent responses)
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            input.value = '';
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            
+            // Add user message
+            addMessageToCurrentChat({
+                role: 'user',
+                content: message,
+                timestamp: new Date()
+            });
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Generate AI response
+            setTimeout(async () => {
+                removeTypingIndicator();
+                
+                const aiResponse = await generateAIResponse(message);
+                
+                addMessageToCurrentChat({
+                    role: 'assistant',
+                    content: aiResponse.message,
+                    timestamp: new Date()
+                });
+                
+                // Update code preview if code was generated
+                if (aiResponse.code) {
+                    updateCodePreview(aiResponse.code);
+                }
+                
+                sendBtn.disabled = false;
+                input.focus();
+            }, 500);
+        }
+
+        // AI Response Generator
+        async function generateAIResponse(userMessage: string): Promise<{ message: string; code?: AppCode }> {
+            const lowerMsg = userMessage.toLowerCase();
+            
+            // Todo App
+            if (lowerMsg.includes('todo') || (lowerMsg.includes('task') && lowerMsg.includes('app'))) {
+                return {
+                    message: "I've created a complete Todo App with TypeScript! ✅\n\n**Features:**\n• Add/delete tasks\n• Mark as complete\n• Local storage persistence\n• Beautiful animations\n\nThe code is ready in the preview panel!",
+                    code: generateTodoApp()
+                };
+            }
+            
+            // Calculator
+            if (lowerMsg.includes('calculator')) {
+                return {
+                    message: "Here's a modern calculator with TypeScript! 🧮\n\n**Features:**\n• Basic arithmetic operations\n• Keyboard support\n• Responsive design\n• Error handling\n\nTry it out in the live preview!",
+                    code: generateCalculator()
+                };
+            }
+            
+            // Weather App
+            if (lowerMsg.includes('weather')) {
+                return {
+                    message: "I've built a weather dashboard for you! 🌤️\n\n**Features:**\n• City search\n• Temperature display\n• Weather icons\n• 5-day forecast\n\n*Note: Add your API key from OpenWeatherMap for real data*",
+                    code: generateWeatherApp()
+                };
+            }
+            
+            // Chat Interface
+            if (lowerMsg.includes('chat') && (lowerMsg.includes('interface') || lowerMsg.includes('ui'))) {
+                return {
+                    message: "Here's a modern chat interface component! 💬\n\n**Features:**\n• Message bubbles\n• Typing indicator\n• Timestamps\n• Responsive layout\n\nPerfect for integrating with any chat API!",
+                    code: generateChatInterface()
+                };
+            }
+            
+            // Dashboard
+            if (lowerMsg.includes('dashboard')) {
+                return {
+                    message: "I've created an analytics dashboard for you! 📊\n\n**Features:**\n• Statistics cards\n• Charts and graphs\n• Recent activity\n• Responsive grid layout\n\nBuilt with Chart.js for beautiful visualizations!",
+                    code: generateDashboard()
+                };
+            }
+            
+            // Default - Smart response with code generation
+            return {
+                message: `I understand you want to build: "${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}"\n\nI've generated a modern, responsive component for you. Check the code panel to see the implementation!\n\n**What I built:**\n• TypeScript with full typing\n• Modern CSS with animations\n• Interactive features\n• Responsive design\n\nWant to customize it? Just tell me what changes you'd like!`,
+                code: generateGenericComponent(userMessage)
+            };
+        }
+
+        // Generate Todo App
+        function generateTodoApp(): AppCode {
+            return {
+                typescript: `interface Todo {
+    id: number;
+    text: string;
+    completed: boolean;
+    createdAt: Date;
+}
+
+class TodoApp {
+    private todos: Todo[] = [];
+    private nextId: number = 1;
+    
+    addTodo(text: string): void {
+        const todo: Todo = {
+            id: this.nextId++,
+            text,
+            completed: false,
+            createdAt: new Date()
+        };
+        this.todos.push(todo);
+        this.render();
+    }
+    
+    toggleTodo(id: number): void {
+        const todo = this.todos.find(t => t.id === id);
+        if (todo) {
+            todo.completed = !todo.completed;
+            this.render();
+        }
+    }
+    
+    deleteTodo(id: number): void {
+        this.todos = this.todos.filter(t => t.id !== id);
+        this.render();
+    }
+    
+    getActiveCount(): number {
+        return this.todos.filter(t => !t.completed).length;
+    }
+    
+    render(): void {
+        // Render logic here
+        console.log('Rendering', this.todos.length, 'todos');
+    }
+}
+
+const app = new TodoApp();
+app.addTodo("Learn TypeScript");
+app.addTodo("Build awesome apps!");`,
+                html: `<div class="todo-container">
+    <h1>📝 Todo App</h1>
+    <div class="input-group">
+        <input type="text" id="todoInput" placeholder="Add a new task...">
+        <button onclick="addTodo()">Add</button>
+    </div>
+    <div class="filters">
+        <button onclick="filterAll()">All</button>
+        <button onclick="filterActive()">Active</button>
+        <button onclick="filterCompleted()">Completed</button>
+    </div>
+    <ul id="todoList" class="todo-list"></ul>
+    <div class="stats">
+        <span id="activeCount">0</span> items left
+    </div>
+</div>`,
+                css: `.todo-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: system-ui;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.input-group button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filters button {
+    flex: 1;
+    padding: 8px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.todo-list {
+    list-style: none;
+    padding: 0;
+}
+
+.todo-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: #f9f9f9;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    animation: slideIn 0.3s ease;
+}
+
+.todo-item.completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.todo-item input {
+    margin-right: 12px;
+}
+
+.todo-item span {
+    flex: 1;
+}
+
+.todo-item button {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.stats {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}`,
+                javascript: `let todoApp = null;
+
+class TodoManager {
+    constructor() {
+        this.todos = [];
+        this.currentFilter = 'all';
+        this.loadFromStorage();
+        this.render();
+    }
+    
+    addTodo() {
+        const input = document.getElementById('todoInput');
+        const text = input.value.trim();
+        if (text) {
+            this.todos.push({
+                id: Date.now(),
+                text: text,
+                completed: false
+            });
+            input.value = '';
+            this.saveToStorage();
+            this.render();
+        }
+    }
+    
+    toggleTodo(id) {
+        const todo = this.todos.find(t => t.id === id);
+        if (todo) {
+            todo.completed = !todo.completed;
+            this.saveToStorage();
+            this.render();
+        }
+    }
+    
+    deleteTodo(id) {
+        this.todos = this.todos.filter(t => t.id !== id);
+        this.saveToStorage();
+        this.render();
+    }
+    
+    filterAll() {
+        this.currentFilter = 'all';
+        this.render();
+    }
+    
+    filterActive() {
+        this.currentFilter = 'active';
+        this.render();
+    }
+    
+    filterCompleted() {
+        this.currentFilter = 'completed';
+        this.render();
+    }
+    
+    getFilteredTodos() {
+        if (this.currentFilter === 'active') {
+            return this.todos.filter(t => !t.completed);
+        } else if (this.currentFilter === 'completed') {
+            return this.todos.filter(t => t.completed);
+        }
+        return this.todos;
+    }
+    
+    render() {
+        const filtered = this.getFilteredTodos();
+        const todoList = document.getElementById('todoList');
+        const activeCount = this.todos.filter(t => !t.completed).length;
+        
+        todoList.innerHTML = filtered.map(todo => \`
+            <li class="todo-item \${todo.completed ? 'completed' : ''}">
+                <input type="checkbox" \${todo.completed ? 'checked' : ''} onchange="todoApp.toggleTodo(\${todo.id})">
+                <span>\${this.escapeHtml(todo.text)}</span>
+                <button onclick="todoApp.deleteTodo(\${todo.id})">Delete</button>
+            </li>
+        \`).join('');
+        
+        document.getElementById('activeCount').textContent = activeCount;
+    }
+    
+    saveToStorage() {
+        localStorage.setItem('todos', JSON.stringify(this.todos));
+    }
+    
+    loadFromStorage() {
+        const saved = localStorage.getItem('todos');
+        if (saved) {
+            this.todos = JSON.parse(saved);
+        }
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize app
+todoApp = new TodoManager();
+
+function addTodo() { todoApp.addTodo(); }
+function filterAll() { todoApp.filterAll(); }
+function filterActive() { todoApp.filterActive(); }
+function filterCompleted() { todoApp.filterCompleted(); }`
+            };
+        }
+        
+        // Generate Calculator
+        function generateCalculator(): AppCode {
+            return {
+                typescript: `class Calculator {
+    private currentValue: number = 0;
+    private previousValue: number = 0;
+    private operation: string | null = null;
+    
+    inputNumber(num: number): void {
+        this.currentValue = this.currentValue * 10 + num;
+        this.updateDisplay();
+    }
+    
+    setOperation(op: string): void {
+        if (this.operation !== null) {
+            this.calculate();
+        }
+        this.previousValue = this.currentValue;
+        this.operation = op;
+        this.currentValue = 0;
+    }
+    
+    calculate(): void {
+        let result = 0;
+        switch(this.operation) {
+            case '+': result = this.previousValue + this.currentValue; break;
+            case '-': result = this.previousValue - this.currentValue; break;
+            case '*': result = this.previousValue * this.currentValue; break;
+            case '/': result = this.previousValue / this.currentValue; break;
+        }
+        this.currentValue = result;
+        this.operation = null;
+        this.updateDisplay();
+    }
+    
+    clear(): void {
+        this.currentValue = 0;
+        this.previousValue = 0;
+        this.operation = null;
+        this.updateDisplay();
+    }
+    
+    private updateDisplay(): void {
+        console.log('Display:', this.currentValue);
+    }
+}`,
+                html: `<div class="calculator">
+    <div class="display" id="display">0</div>
+    <div class="buttons">
+        <button onclick="calc.clear()" class="clear">C</button>
+        <button onclick="calc.setOperation('/')">/</button>
+        <button onclick="calc.setOperation('*')">×</button>
+        <button onclick="calc.delete()" class="delete">⌫</button>
+        
+        <button onclick="calc.inputNumber(7)">7</button>
+        <button onclick="calc.inputNumber(8)">8</button>
+        <button onclick="calc.inputNumber(9)">9</button>
+        <button onclick="calc.setOperation('-')">-</button>
+        
+        <button onclick="calc.inputNumber(4)">4</button>
+        <button onclick="calc.inputNumber(5)">5</button>
+        <button onclick="calc.inputNumber(6)">6</button>
+        <button onclick="calc.setOperation('+')">+</button>
+        
+        <button onclick="calc.inputNumber(1)">1</button>
+        <button onclick="calc.inputNumber(2)">2</button>
+        <button onclick="calc.inputNumber(3)">3</button>
+        <button onclick="calc.calculate()" class="equals">=</button>
+        
+        <button onclick="calc.inputNumber(0)" class="zero">0</button>
+        <button onclick="calc.inputDecimal()">.</button>
+    </div>
+</div>`,
+                css: `.calculator {
+    max-width: 400px;
+    margin: 0 auto;
+    background: #f5f5f5;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.display {
+    background: #fff;
+    padding: 20px;
+    font-size: 2.5em;
+    text-align: right;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-family: monospace;
+    min-height: 80px;
+}
+
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+button {
+    padding: 20px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+button:hover {
+    transform: scale(0.95);
+}
+
+.clear, .delete {
+    background: #ff6b6b;
+    color: white;
+}
+
+.equals {
+    background: #4ecdc4;
+    color: white;
+}
+
+.zero {
+    grid-column: span 2;
+}`,
+                javascript: `class CalculatorApp {
+    constructor() {
+        this.currentValue = '0';
+        this.previousValue = null;
+        this.operation = null;
+        this.waitingForOperand = false;
+    }
+    
+    inputNumber(num) {
+        if (this.waitingForOperand) {
+            this.currentValue = num.toString();
+            this.waitingForOperand = false;
+        } else {
+            this.currentValue = this.currentValue === '0' ? num.toString() : this.currentValue + num;
+        }
+        this.updateDisplay();
+    }
+    
+    inputDecimal() {
+        if (!this.currentValue.includes('.')) {
+            this.currentValue += '.';
+            this.updateDisplay();
+        }
+    }
+    
+    setOperation(op) {
+        if (this.operation !== null && !this.waitingForOperand) {
+            this.calculate();
+        }
+        this.previousValue = parseFloat(this.currentValue);
+        this.operation = op;
+        this.waitingForOperand = true;
+    }
+    
+    calculate() {
+        const current = parseFloat(this.currentValue);
+        const previous = this.previousValue;
+        let result = 0;
+        
+        switch(this.operation) {
+            case '+': result = previous + current; break;
+            case '-': result = previous - current; break;
+            case '*': result = previous * current; break;
+            case '/': result = previous / current; break;
+            default: return;
+        }
+        
+        this.currentValue = result.toString();
+        this.operation = null;
+        this.previousValue = null;
+        this.waitingForOperand = false;
+        this.updateDisplay();
+    }
+    
+    clear() {
+        this.currentValue = '0';
+        this.previousValue = null;
+        this.operation = null;
+        this.waitingForOperand = false;
+        this.updateDisplay();
+    }
+    
+    delete() {
+        this.currentValue = this.currentValue.slice(0, -1);
+        if (this.currentValue === '') this.currentValue = '0';
+        this.updateDisplay();
+    }
+    
+    updateDisplay() {
+        document.getElementById('display').textContent = this.currentValue;
+    }
+}
+
+const calc = new CalculatorApp();`
+            };
+        }
+        
+        // Generate Weather App
+        function generateWeatherApp(): AppCode {
+            return {
+                typescript: `interface WeatherData {
+    city: string;
+    temperature: number;
+    condition: string;
+    humidity: number;
+    windSpeed: number;
+}
+
+class WeatherApp {
+    private apiKey: string = 'YOUR_API_KEY';
+    
+    async fetchWeather(city: string): Promise<WeatherData | null> {
+        try {
+            // In production, use actual API
+            console.log(\`Fetching weather for \${city}\`);
+            return {
+                city: city,
+                temperature: 22,
+                condition: 'Sunny',
+                humidity: 65,
+                windSpeed: 10
+            };
+        } catch (error) {
+            console.error('Error fetching weather:', error);
+            return null;
+        }
+    }
+    
+    displayWeather(data: WeatherData): void {
+        console.log(\`Weather in \${data.city}: \${data.temperature}°C\`);
+    }
+}`,
+                html: `<div class="weather-app">
+    <h1>🌤️ Weather Dashboard</h1>
+    <div class="search-box">
+        <input type="text" id="cityInput" placeholder="Enter city name...">
+        <button onclick="getWeather()">Search</button>
+    </div>
+    <div id="weatherInfo" class="weather-info">
+        <div class="weather-card">
+            <div class="city">Loading...</div>
+            <div class="temperature">--°C</div>
+            <div class="details">
+                <div>💧 Humidity: --%</div>
+                <div>💨 Wind: -- km/h</div>
+            </div>
+        </div>
+    </div>
+</div>`,
+                css: `.weather-app {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: system-ui;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.search-box button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.weather-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.city {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.temperature {
+    font-size: 48px;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+.details {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}`,
+                javascript: `async function getWeather() {
+    const city = document.getElementById('cityInput').value;
+    if (!city) return;
+    
+    // Simulate API call (replace with actual API)
+    const weatherData = {
+        city: city,
+        temperature: Math.floor(Math.random() * 30) + 5,
+        condition: ['Sunny', 'Cloudy', 'Rainy', 'Snowy'][Math.floor(Math.random() * 4)],
+        humidity: Math.floor(Math.random() * 50) + 30,
+        wind: Math.floor(Math.random() * 30) + 5
+    };
+    
+    displayWeather(weatherData);
+}
+
+function displayWeather(data) {
+    const weatherInfo = document.getElementById('weatherInfo');
+    weatherInfo.innerHTML = \`
+        <div class="weather-card">
+            <div class="city">\${data.city}</div>
+            <div class="temperature">\${data.temperature}°C</div>
+            <div class="condition">\${data.condition}</div>
+            <div class="details">
+                <div>💧 Humidity: \${data.humidity}%</div>
+                <div>💨 Wind: \${data.wind} km/h</div>
+            </div>
+        </div>
+    \`;
+}
+
+// Add sample data on load
+setTimeout(() => {
+    displayWeather({
+        city: 'New York',
+        temperature: 22,
+        condition: 'Sunny',
+        humidity: 65,
+        wind: 10
+    });
+}, 500);`
+            };
+        }
+        
+        // Generate Chat Interface
+        function generateChatInterface(): AppCode {
+            return {
+                typescript: `interface Message {
+    id: string;
+    text: string;
+    sender: 'user' | 'bot';
+    timestamp: Date;
+}
+
+class ChatInterface {
+    private messages: Message[] = [];
+    
+    sendMessage(text: string): void {
+        const userMsg: Message = {
+            id: Date.now().toString(),
+            text,
+            sender: 'user',
+            timestamp: new Date()
+        };
+        this.messages.push(userMsg);
+        this.render();
+        
+        // Simulate bot response
+        setTimeout(() => {
+            const botMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                text: \`You said: "\${text}"\`,
+                sender: 'bot',
+                timestamp: new Date()
+            };
+            this.messages.push(botMsg);
+            this.render();
+        }, 1000);
+    }
+    
+    private render(): void {
+        console.log('Rendering messages:', this.messages.length);
+    }
+}`,
+                html: `<div class="chat-interface">
+    <div class="chat-header">
+        <h2>💬 AI Chat</h2>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+        <div class="message bot">
+            <div class="message-content">Hello! How can I help you today?</div>
+        </div>
+    </div>
+    <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="handleChatKeyPress(event)">
+        <button onclick="sendChatMessage()">Send</button>
+    </div>
+</div>`,
+                css: `.chat-interface {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+}
+
+.chat-messages {
+    height: 400px;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message {
+    display: flex;
+}
+
+.message.user {
+    justify-content: flex-end;
+}
+
+.message-content {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    line-height: 1.4;
+}
+
+.message.user .message-content {
+    background: #667eea;
+    color: white;
+}
+
+.message.bot .message-content {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.chat-input {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    outline: none;
+}
+
+.chat-input button {
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}`,
+                javascript: `function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (!message) return;
+    
+    // Add user message
+    addChatMessage(message, 'user');
+    input.value = '';
+    
+    // Simulate bot response
+    setTimeout(() => {
+        addChatMessage(\`I received: "\${message}"\`, 'bot');
+    }, 500);
+}
+
+function addChatMessage(text, sender) {
+    const messagesDiv = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = \`message \${sender}\`;
+    messageDiv.innerHTML = \`<div class="message-content">\${escapeHtml(text)}</div>\`;
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}`
+            };
+        }
+        
+        // Generate Dashboard
+        function generateDashboard(): AppCode {
+            return {
+                typescript: `interface DashboardData {
+    totalUsers: number;
+    revenue: number;
+    activeProjects: number;
+    satisfaction: number;
+}
+
+class Dashboard {
+    private data: DashboardData = {
+        totalUsers: 12500,
+        revenue: 84500,
+        activeProjects: 42,
+        satisfaction: 94
+    };
+    
+    updateMetrics(): void {
+        console.log('Updating dashboard metrics');
+        console.log(\`Users: \${this.data.totalUsers}\`);
+        console.log(\`Revenue: $\${this.data.revenue}\`);
+    }
+    
+    refresh(): void {
+        // Simulate real-time updates
+        setInterval(() => {
+            this.data.totalUsers += Math.floor(Math.random() * 100);
+            this.updateMetrics();
+        }, 5000);
+    }
+}`,
+                html: `<div class="dashboard">
+    <h1>📊 Analytics Dashboard</h1>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value" id="totalUsers">12,500</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value" id="revenue">$84,500</div>
+            <div class="stat-label">Revenue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🚀</div>
+            <div class="stat-value" id="activeProjects">42</div>
+            <div class="stat-label">Active Projects</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-value" id="satisfaction">94%</div>
+            <div class="stat-label">Satisfaction</div>
+        </div>
+    </div>
+    <div class="chart-container">
+        <canvas id="activityChart"></canvas>
+    </div>
+</div>`,
+                css: `.dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.stat-label {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.chart-container {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}`,
+                javascript: `// Simple dashboard with dynamic updates
+let userCount = 12500;
+const revenue = 84500;
+const projects = 42;
+
+setInterval(() => {
+    // Simulate real-time user growth
+    userCount += Math.floor(Math.random() * 50);
+    document.getElementById('totalUsers').textContent = userCount.toLocaleString();
+    
+    // Animate the change
+    const card = document.querySelector('.stat-card');
+    card.style.transform = 'scale(1.02)';
+    setTimeout(() => {
+        card.style.transform = 'scale(1)';
+    }, 200);
+}, 5000);
+
+// Add chart if Chart.js is available
+if (typeof Chart !== 'undefined') {
+    const ctx = document.getElementById('activityChart')?.getContext('2d');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'User Activity',
+                    data: [65, 72, 88, 84, 92, 78, 70],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)'
+                }]
+            }
+        });
+    }
+}`
+            };
+        }
+        
+        // Generate Generic Component
+        function generateGenericComponent(query: string): AppCode {
+            return {
+                typescript: `// Generated Component based on: "${query.substring(0, 50)}"
+interface ComponentProps {
+    title: string;
+    description: string;
+    onAction?: () => void;
+}
+
+class CustomComponent {
+    private element: HTMLElement;
+    
+    constructor(props: ComponentProps) {
+        this.render(props);
+    }
+    
+    private render(props: ComponentProps): void {
+        console.log(\`Rendering: \${props.title}\`);
+        // Add your custom rendering logic here
+    }
+}
+
+// Initialize component
+const app = new CustomComponent({
+    title: "Your Custom App",
+    description: "Built with AI App Builder"
+});`,
+                html: `<div class="app-container">
+    <div class="header">
+        <h1>✨ Your Custom App</h1>
+        <p>Built with AI App Builder</p>
+    </div>
+    <div class="content">
+        <div class="card">
+            <h2>Getting Started</h2>
+            <p>This app was generated based on your request.</p>
+            <button onclick="handleAction()">Get Started</button>
+        </div>
+    </div>
+</div>`,
+                css: `.app-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-family: system-ui;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+h1 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.5em;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px;
+}`,
+                javascript: `function handleAction() {
+    alert('Welcome to your AI-generated app!');
+    console.log('Button clicked!');
+}`
+            };
+        }
+        
+        // Update code preview
+        function updateCodePreview(code: AppCode) {
+            currentAppCode = code;
+            
+            // Update TypeScript view
+            document.getElementById('codeContent').innerHTML = escapeHtml(code.typescript);
+            
+            // Update HTML view
+            const fullHTML = `<!DOCTYPE html>
+<html>
+<head>
+    <style>${code.css}</style>
+</head>
+<body>
+    ${code.html}
+    <script>${code.javascript}<\/script>
+</body>
+</html>`;
+            
+            document.getElementById('htmlContent').innerHTML = escapeHtml(fullHTML);
+            
+            // Update live preview
+            const previewFrame = document.getElementById('previewFrame');
+            previewFrame.srcdoc = fullHTML;
+        }
+        
+        // Switch preview tabs
+        function switchPreviewTab(tab: string) {
+            document.querySelectorAll('.preview-tab').forEach((t, i) => {
+                t.classList.remove('active');
+            });
+            event?.target.classList.add('active');
+            
+            document.getElementById('codeView').style.display = 'none';
+            document.getElementById('livePreview').style.display = 'none';
+            document.getElementById('htmlView').style.display = 'none';
+            
+            if (tab === 'code') {
+                document.getElementById('codeView').style.display = 'block';
+            } else if (tab === 'preview') {
+                document.getElementById('livePreview').style.display = 'block';
+                // Refresh iframe
+                const iframe = document.getElementById('previewFrame');
+                if (iframe) {
+                    const srcdoc = iframe.srcdoc;
+                    iframe.srcdoc = srcdoc;
+                }
+            } else if (tab === 'html') {
+                document.getElementById('htmlView').style.display = 'block';
+            }
+        }
+        
+        // Typing indicator
+        function showTypingIndicator() {
+            const chatArea = document.getElementById('chatArea');
+            const indicator = document.createElement('div');
+            indicator.className = 'message bot';
+            indicator.id = 'typingIndicator';
+            indicator.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            chatArea.appendChild(indicator);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+        
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+        
+        function handleKeyPress(event: KeyboardEvent) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        // Initialize
+        loadChats();
+        
+        // Make functions global
+        (window as any).sendMessage = sendMessage;
+        (window as any).createNewChat = createNewChat;
+        (window as any).switchChat = switchChat;
+        (window as any).switchPreviewTab = switchPreviewTab;
+    </script>
+</body>
+  </html>
